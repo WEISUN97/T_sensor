@@ -1,51 +1,111 @@
 import gdsfactory as gf
 
 
-def single_spring_path(spring_num=3, total_length=250):
+def single_spring_path_singleside(
+    spring_num=2, total_length=250, horizontal_length=20, vertical_length=6, radius=5
+):
     # springs
     P = gf.Path()
     # vertical paths
-    vertical_length = (total_length - (spring_num * 8 + 4)) / 2
-    P.append(gf.path.straight(length=vertical_length))
+    vertical_path = (
+        total_length - (spring_num * (vertical_length + 2 * radius) + 2 * radius)
+    ) / 2
+    P.append(gf.path.straight(length=vertical_path))
 
     for i in range(spring_num):
         if i % 2 == 0:
             if i == 0:
-                P.append(gf.path.arc(radius=2, angle=90))
-                P.append(gf.path.straight(length=20))
+                P.append(gf.path.arc(radius=radius, angle=90))
+                P.append(gf.path.straight(length=horizontal_length))
             else:
-                P.append(gf.path.straight(length=22))
-            P.append(gf.path.arc(radius=2, angle=-90))
-            P.append(gf.path.straight(length=4))
-            P.append(gf.path.arc(radius=2, angle=-90))
+                P.append(gf.path.straight(length=horizontal_length + radius))
+            P.append(gf.path.arc(radius=radius, angle=-90))
+            P.append(gf.path.straight(length=vertical_length))
+            P.append(gf.path.arc(radius=radius, angle=-90))
             if i == spring_num - 1:
-                P.append(gf.path.straight(length=20))
-                P.append(gf.path.arc(radius=2, angle=90))
+                P.append(gf.path.straight(length=horizontal_length))
+                P.append(gf.path.arc(radius=radius, angle=90))
             else:
-                P.append(gf.path.straight(length=22))
+                P.append(gf.path.straight(length=horizontal_length + radius))
         else:
-            P.append(gf.path.straight(length=22))
-            P.append(gf.path.arc(radius=2, angle=90))
-            P.append(gf.path.straight(length=4))
-            P.append(gf.path.arc(radius=2, angle=90))
+            P.append(gf.path.straight(length=horizontal_length + radius))
+            P.append(gf.path.arc(radius=radius, angle=90))
+            P.append(gf.path.straight(length=vertical_length))
+            P.append(gf.path.arc(radius=radius, angle=90))
             if i == spring_num - 1:
-                P.append(gf.path.straight(length=20))
-                P.append(gf.path.arc(radius=2, angle=-90))
+                P.append(gf.path.straight(length=horizontal_length))
+                P.append(gf.path.arc(radius=radius, angle=-90))
             else:
-                P.append(gf.path.straight(length=22))
-    P.append(gf.path.straight(length=vertical_length))
+                P.append(gf.path.straight(length=horizontal_length + radius))
+    P.append(gf.path.straight(length=vertical_path))
     return P
 
 
-def create_mid_structure_square(total_length=250, spring_num=3):
+def single_spring_path_doubleside(
+    spring_num=2,
+    total_length=250,
+    horizontal_length=30,
+    vertical_length=6,
+    radius=5,
+    vertical_mid_length=10,
+):
+    # springs
+    P1 = gf.Path()
+    P2 = gf.Path()
+    P_list = [P1, P2]
+    # vertical paths
+    vertical_path = (
+        total_length
+        - (
+            spring_num * (vertical_length + 4 * radius)
+            + (spring_num - 1) * vertical_mid_length
+        )
+    ) / 2
+    for j in range(2):
+        P = P_list[j]
+        P.append(gf.path.straight(length=vertical_path))
+        k = 1 if j == 0 else -1
+        for i in range(spring_num):
+            P.append(gf.path.arc(radius=radius, angle=90 * k))
+            P.append(gf.path.straight(length=horizontal_length))
+            P.append(gf.path.arc(radius=radius, angle=-90 * k))
+            P.append(gf.path.straight(length=vertical_length))
+            P.append(gf.path.arc(radius=radius, angle=-90 * k))
+            P.append(gf.path.straight(length=horizontal_length))
+            P.append(gf.path.arc(radius=radius, angle=90 * k))
+            if i != spring_num - 1:
+                P.append(gf.path.straight(length=vertical_mid_length))
+    P.append(gf.path.straight(length=vertical_path))
+    return P_list
+
+
+def create_mid_structure_square(
+    total_length=250,
+    spring_num=3,
+    horizontal_length=20,
+    vertical_length=6,
+    radius=5,
+    vertical_mid_length=10,
+):
     mid_struct = gf.Component()
     spring_single = gf.Component()
     spring = gf.Component()
     pad = gf.components.rectangle(size=(100, 100), layer=(9, 0))
     gold = gf.components.rectangle(size=(95, 95), layer=(11, 0))
-    P = single_spring_path(spring_num, total_length)
+    P = single_spring_path_doubleside(
+        spring_num=spring_num,
+        total_length=total_length,
+        horizontal_length=horizontal_length,
+        vertical_length=vertical_length,
+        radius=radius,
+        vertical_mid_length=vertical_mid_length,
+    )
     # create the component
-    (spring_single << gf.path.extrude(P, width=2, layer=(9, 0))).rotate(90)
+    if type(P) == list:
+        (spring_single << gf.path.extrude(P[0], width=2, layer=(9, 0))).rotate(90)
+        (spring_single << gf.path.extrude(P[1], width=2, layer=(9, 0))).rotate(90)
+    else:
+        (spring_single << gf.path.extrude(P, width=2, layer=(9, 0))).rotate(90)
     (spring << spring_single).move((-41, -300))
     (spring << spring_single).move((-41, -300)).dmirror_x(0)
 
@@ -61,15 +121,33 @@ def create_mid_structure_square(total_length=250, spring_num=3):
     return mid_struct
 
 
-def create_mid_structure_circle(total_length=270, spring_num=3):
+def create_mid_structure_circle(
+    spring_num=3,
+    total_length=270,
+    horizontal_length=20,
+    vertical_length=6,
+    radius=5,
+    vertical_mid_length=10,
+):
     mid_struct = gf.Component()
     spring_single = gf.Component()
     spring = gf.Component()
     pad = gf.components.circle(radius=31, layer=(9, 0))
     gold = gf.components.circle(radius=27.5, layer=(11, 0))
-    P = single_spring_path(spring_num, total_length)
+    P = single_spring_path_doubleside(
+        spring_num=spring_num,
+        total_length=total_length,
+        horizontal_length=horizontal_length,
+        vertical_length=vertical_length,
+        radius=radius,
+        vertical_mid_length=vertical_mid_length,
+    )
     # create the component
-    (spring << gf.path.extrude(P, width=2, layer=(9, 0))).rotate(90).movey(30)
+    if type(P) == list:
+        (spring << gf.path.extrude(P[0], width=2, layer=(9, 0))).rotate(90).movey(30)
+        (spring << gf.path.extrude(P[1], width=2, layer=(9, 0))).rotate(90).movey(30)
+    else:
+        (spring << gf.path.extrude(P, width=2, layer=(9, 0))).rotate(90).movey(30)
 
     mid_struct << spring
     for i in range(8):
@@ -81,47 +159,9 @@ def create_mid_structure_circle(total_length=270, spring_num=3):
 
 
 if __name__ == "__main__":
-    mid_struct = create_mid_structure_square()
+    mode = 1
+    if mode == 0:
+        mid_struct = create_mid_structure_square()
+    else:
+        mid_struct = create_mid_structure_circle()
     mid_struct.show()
-
-
-# def create_mid_structure_square(total_length=250, spring_num=3):
-#     mid_struct = gf.Component()
-#     pad = gf.components.rectangle(size=(100, 100), layer=(9, 0))
-#     gold = gf.components.rectangle(size=(95, 95), layer=(11, 0))
-
-#     # springs
-#     spring_single = gf.Component()
-#     spring = gf.Component()
-#     spring_unit = gf.Component()
-#     # vertical paths
-#     vertical_length = (total_length - (spring_num * 8 + 2)) / 2
-#     y1 = gf.components.rectangle(size=(2, vertical_length), layer=(9, 0))
-#     # spring unit components (2 horizontal paths and 1 vertical path)
-#     y2 = gf.components.rectangle(size=(2, 6), layer=(9, 0))
-#     x1 = gf.components.rectangle(size=(26, 2), layer=(9, 0))
-#     (spring_unit << x1).movex(-24)
-#     (spring_unit << y2).move((-24, 2))
-#     (spring_unit << x1).move((-24, 8))
-
-#     spring_single << y1
-#     for i in range(spring_num):
-#         if i % 2 == 0:
-#             (spring_single << spring_unit).move((0, vertical_length + i * 8))
-#         else:
-#             (spring_single << spring_unit).move((0, vertical_length + i * 8)).dmirror_x(
-#                 1
-#             )
-#     (spring_single << y1).move((0, vertical_length + spring_num * 8 + 2))
-
-#     (spring << spring_single).move((-41, -300))
-#     (spring << spring_single).move((-41, -300)).dmirror_x(0)
-
-#     mid_struct << spring
-#     (mid_struct << spring).drotate(angle=-90, center=(0, 0))
-#     (mid_struct << spring).drotate(angle=90, center=(0, 0))
-#     (mid_struct << spring).dmirror_y(0)
-
-#     (mid_struct << pad).move((-50, -50))
-#     (mid_struct << gold).move((-47.5, -47.5))
-#     return mid_struct
