@@ -18,7 +18,7 @@ def polynomial(t: float, y1: float, y2: float) -> float:
     return (y2 - y1) * t**3 + y1
 
 
-# round corner
+# round corner as a base of a beam
 def round_corner(w1: float, w2: float, length: float, rotation=0, layer=(2, 0)):
     cs1 = gf.get_cross_section("strip", width=w1, layer=layer)
     cs2 = gf.get_cross_section("strip", width=w2, layer=layer)
@@ -29,6 +29,12 @@ def round_corner(w1: float, w2: float, length: float, rotation=0, layer=(2, 0)):
     c_component = gf.Component()
     (c_component << c).rotate(angle=rotation)
     return c_component
+
+
+# round corner for two intersecting beams
+def round_corner_intersect(radius=90, angle=2, layer=(2, 0)):
+
+    pass
 
 
 if __name__ == "__main__":
