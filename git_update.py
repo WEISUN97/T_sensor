@@ -1,18 +1,13 @@
+from pathlib import Path
 import subprocess
 from datetime import datetime
 
 
 def git_update(commit_message=""):
-
-    repo_dir = "/Users/bubble/Desktop/Project/T_sensor/T_sensor"
-
+    repo_dir = Path(__file__).resolve().parent
     formatted_time = datetime.now().strftime("%Y%m%d%H%M")
 
-    subprocess.run(
-        ["git", "add", "."],
-        cwd=repo_dir,
-        check=True,
-    )
+    subprocess.run(["git", "add", "."], cwd=repo_dir, check=True)
 
     result = subprocess.run(
         ["git", "status", "--porcelain"],
@@ -22,7 +17,6 @@ def git_update(commit_message=""):
     )
 
     if result.stdout.strip():
-
         subprocess.run(
             [
                 "git",
@@ -34,14 +28,22 @@ def git_update(commit_message=""):
             check=True,
         )
 
+        branch_result = subprocess.run(
+            ["git", "branch", "--show-current"],
+            cwd=repo_dir,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        current_branch = branch_result.stdout.strip()
+
         subprocess.run(
-            ["git", "push", "origin", "master"],
+            ["git", "push", "origin", current_branch],
             cwd=repo_dir,
             check=True,
         )
 
-        print("Git push completed.")
-
+        print(f"Git push completed on branch: {current_branch}")
     else:
         print("No changes to commit.")
 
