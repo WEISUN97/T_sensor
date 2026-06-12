@@ -1,10 +1,16 @@
 from pathlib import Path
 import subprocess
 from datetime import datetime
+import platform
 
 
 def git_update(commit_message=""):
-    repo_dir = Path(__file__).resolve().parent
+    current_system = platform.system()
+    if current_system == "Windows":
+        repo_dir = Path(r"C:\Users\bubble\Desktop\Project\T_sensor\T_sensor")
+    else:
+        repo_dir = Path("/Users/bubble/Desktop/Project/T_sensor/T_sensor")
+    # repo_dir = Path(__file__).resolve().parent
     formatted_time = datetime.now().strftime("%Y%m%d%H%M")
 
     subprocess.run(["git", "add", "."], cwd=repo_dir, check=True)
