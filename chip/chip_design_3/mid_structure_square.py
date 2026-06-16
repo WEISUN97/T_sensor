@@ -1,4 +1,12 @@
 import gdsfactory as gf
+from gdsfactory.generic_tech import get_generic_pdk
+import sys
+
+sys.path.append("/Users/bubble/Desktop/Project/T_sensor/T_sensor")
+from Tools.geo_trans import round_corner
+
+PDK = get_generic_pdk()
+PDK.activate()
 
 
 def single_spring_path_singleside(
@@ -108,7 +116,10 @@ def create_mid_structure_square(
         (spring_single << gf.path.extrude(P, width=2, layer=(9, 0))).rotate(90)
     (spring << spring_single).move((-41, -300))
     (spring << spring_single).move((-41, -300)).dmirror_x(0)
-
+    round_corner_left = round_corner(w1=6, w2=2, length=4, rotation=90, layer=(9, 0))
+    round_corner_right = round_corner(w1=6, w2=2, length=4, rotation=90, layer=(9, 0))
+    (spring << round_corner_left).move((-41, -300))
+    (spring << round_corner_right).move((-41, -300)).dmirror_x(0)
     mid_struct << spring
     (mid_struct << spring).drotate(angle=-90, center=(0, 0))
     (mid_struct << spring).drotate(angle=90, center=(0, 0))
@@ -148,6 +159,8 @@ def create_mid_structure_circle(
         (spring << gf.path.extrude(P[1], width=2, layer=(9, 0))).rotate(90).movey(30)
     else:
         (spring << gf.path.extrude(P, width=2, layer=(9, 0))).rotate(90).movey(30)
+    # round_corner_base = round_corner(w1=6, w2=2, length=4, rotation=90, layer=(9, 0))
+    # (spring << round_corner_base).movey(-300)
 
     mid_struct << spring
     for i in range(8):
